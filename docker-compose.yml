@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  python:
+    container_name: schedule-auto
+    build: ./
+    command: uvicorn Main:app --reload --host 0.0.0.0 --port 8000
+    restart: always
+    ports:
+      - 8000:8000
+    environment:
+      - SCHEDULE_FOLDER=/app/data
+    volumes:
+      - C:/Schedule_test:/app/data
