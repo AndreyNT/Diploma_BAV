@@ -38,6 +38,13 @@ class Configuration:
     def numberOfProfessors(self) -> int:
         return len(self._professors)
 
+    ######################################################################
+    @property
+    def numberOfGroups(self) -> int:
+        return len(self._studentGroups)
+    ######################################################################
+
+
     # Возвращает группу студентов по указанному ID
     # Если группы с таким ID нет, возвращает NULL
     def getStudentsGroupById(self, id) -> StudentsGroup:

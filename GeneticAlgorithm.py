@@ -2,6 +2,7 @@ from Model import Schedule
 import random
 from random import randrange
 import time
+import matplotlib.pyplot as plt
 
 
 # Генетический алгоритм
@@ -158,7 +159,7 @@ class GeneticAlgorithm:
         return offspring
 
     # Запускает и выполняет алгоритм
-    def run(self, maxRepeat=9999, minFitness=0.999, maxGeneration=4000):
+    def run(self, maxRepeat=9999, minFitness=0.999, maxGeneration=5000):
         # Очищает группу лучших хромосом от предыдущего выполнения
         self.clearBest()
         length_chromosomes = len(self._chromosomes)
@@ -169,11 +170,15 @@ class GeneticAlgorithm:
         # Текущее поколение
         currentGeneration = 0
 
+        # Список для хранения значений fitness
+        fitness_history = []
+
         repeat = 0
         lastBestFit = 0.0
 
         while 1:
             best = self.result
+            current_fitness = best.fitness
             print(
                 "Fitness:",
                 "{:f}\t".format(best.fitness),
@@ -181,6 +186,9 @@ class GeneticAlgorithm:
                 currentGeneration,
                 end="\r",
             )
+
+            # Сохраняем значение fitness
+            fitness_history.append(current_fitness)
 
             # Алгоритм достиг цели?
             if best.fitness > minFitness:
@@ -204,6 +212,11 @@ class GeneticAlgorithm:
             lastBestFit = best.fitness
             random.seed(round(time.time() * 1000))
             currentGeneration += 1
+
+        return {
+            "fitness_history": fitness_history,
+            "currentGeneration": currentGeneration
+        }
 
     def __str__(self):
         return "Genetic Algorithm"

@@ -2,10 +2,11 @@ import os
 import sys
 import traceback
 import logging
+import matplotlib.pyplot as plt
 
 from Model.Configuration import Configuration
 from GeneticAlgorithm import GeneticAlgorithm
-from Output.HtmlOutput import HtmlOutput
+from Output.HtmlOutput4 import HtmlOutput
 from Output.CsvOutput import CsvOutput
 from Output.JsonOutput import JsonOutput
 
@@ -33,7 +34,12 @@ def main(file_name):
         # Генетический алгоритм
         alg = GeneticAlgorithm(configuration)
         print("ГА Расписание 1.0.0. Начало формирования расписания.", alg, ".\n")
-        alg.run()
+        #####alg.run()
+        result = alg.run()
+
+        # Получаем данные для графика
+        fitness_history = result["fitness_history"]
+        currentGeneration = result["currentGeneration"]
 
         # Получаем расписание из alg.result (Schedule)
         schedule = alg.result
@@ -43,6 +49,18 @@ def main(file_name):
         csv_path = os.path.join(CONFIG_FOLDER, f"{base_name}.csv")
         html_path = os.path.join(CONFIG_FOLDER, f"{base_name}.html")
         json_path = os.path.join(CONFIG_FOLDER, f"{base_name}.json")
+
+        # Сохранение графика
+        base_name = os.path.splitext(safe_file_name)[0].rstrip("_data")
+        plot_path = os.path.join(CONFIG_FOLDER, f"{base_name}_fig1.png")
+
+        plt.plot(range(currentGeneration + 1), fitness_history)
+        plt.xlabel("Generations")
+        plt.ylabel("Fitness")
+        plt.title("Fitness vs Generations")
+        plt.grid(True)
+        plt.savefig(plot_path)
+        plt.close()
 
         # Формирование CSV
         CsvOutput.write_csv(schedule, csv_path)
@@ -57,7 +75,8 @@ def main(file_name):
             "csv_path": csv_path,
             "html_path": html_path,
             "json_path": json_path,
-            "schedule": schedule_data
+            "schedule": schedule_data,
+            "fig1": plot_path
         }
 
     except Exception:
@@ -70,7 +89,7 @@ if __name__ == "__main__":
     try:
         file_name = sys.argv[1]
     except IndexError:
-        file_name = "\Schedule_data.json"
+        file_name = r"\Schedule_data.json"
     main(file_name)
 
 

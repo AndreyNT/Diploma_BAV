@@ -11,7 +11,7 @@ class CsvOutput:
         """
         classes = schedule._classes  # Рекомендуется заменить на публичное свойство
         try:
-            with open(path, "w", encoding="utf-8", newline="") as csvfile:
+            with open(path, "w", encoding="utf-8-sig", newline="") as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow([
                     "CourseID", "CourseName", "Section",

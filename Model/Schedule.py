@@ -84,7 +84,8 @@ class Schedule:
         new_chromosome.calculateFitness("makeNewFromPrototype")
         return new_chromosome
 
-    # Выполняет операцию кроссовера с использованием двух хромосом и возвращает потомка
+    # Выполняет операцию кроссовера с использованием
+    # двух хромосом и возвращает потомка
     def crossover(self, parent, numberOfCrossoverPoints, crossoverProbability):
         # Проверяет вероятность операции кроссовера
         if randrange(32768) % 100 > crossoverProbability:
@@ -118,7 +119,8 @@ class Schedule:
                 dur = course_class.Duration
                 reservation = classes[course_class]
                 reservation_index = hash(reservation)
-                # Вставляет занятие из первой родительской хромосомы в таблицу потомка
+                # Вставляет занятие из первой
+                # родительской хромосомы в таблицу потомка
                 n_classes[course_class] = reservation
                 # Все временные слоты занятия копируются
 
@@ -138,7 +140,8 @@ class Schedule:
                 dur = course_class.Duration
                 reservation = parent._classes[course_class]
                 reservation_index = hash(reservation)
-                # Вставляет занятие из второй родительской хромосомы в таблицу потомка
+                # Вставляет занятие из второй
+                # родительской хромосомы в таблицу потомка
                 n_classes[course_class] = reservation
 
                 # Все временные слоты занятия копируются
@@ -224,6 +227,30 @@ class Schedule:
         numberOfRooms = configuration.numberOfRooms
         DAY_HOURS, DAYS_NUM = Constant.DAY_HOURS, Constant.DAYS_NUM
         daySize = DAY_HOURS * numberOfRooms
+
+        #######################################################
+        # Словари для подсчёта количества занятий в день
+        group_day_count = defaultdict(int)
+        professor_day_count = defaultdict(int)
+
+        for cc, reservation in items:
+            day = reservation.Day
+            for group in cc.Groups:
+                group_day_count[(group.Id, day)] += 1
+            for prof in cc.Professors:
+                professor_day_count[(prof.Id, day)] += 1
+
+        for key, count in group_day_count.items():
+            if count > 4:
+                self._fitness = 0
+                return
+
+
+        for key, count in professor_day_count.items():
+            if count > 4:
+                self._fitness = 0
+                return
+        #######################################################
 
         ci = 0
         getRoomById = configuration.getRoomById
@@ -406,11 +433,37 @@ class Schedule:
             sumScore += score
             ci += 6
 
-        # Рассчитывает значение приспособленности на основе баллов
+        ###################################################################################
+        # Дополнительные мягкие ограничения для студентов: отсутствие окон
+        alpha_gap = 1.0
+        for group in configuration._studentGroups.values():
+            for day_idx in range(DAYS_NUM):
+                # Собираем все занятия группы в этот день
+                times = []
+                for cc in group.CourseClasses:
+                    reservation = self._classes.get(cc)
+                    if reservation and reservation.Day == day_idx:
+                        times.append((reservation.Time, cc.Duration))
+                if times:
+                    # Проверяем утреннюю паузу
+                    min_time = min(t[0] for t in times)
+                    if min_time > 0:
+                        sumScore -= alpha_gap
+                    # Проверяем промежуточные паузы между занятиями
+                    times_sorted = sorted(times, key=lambda x: x[0])
+                    for i in range(len(times_sorted) - 1):
+                        current_end = times_sorted[i][0] +  times_sorted[i][1]
+                        next_start = times_sorted[i + 1][0]
+                        if next_start > current_end:
+                            sumScore -= alpha_gap
+        ###################################################################################
+
+         # Рассчитывает значение приспособленности на основе баллов
         if configuration.numberOfCourseClasses > 0:
             self._fitness = sumScore / (configuration.numberOfCourseClasses * 7)
         else:
             self._fitness = 0
+
 
     # Вычисляет значение приспособленности хромосомы (версия 2)
     def calculateFitness2(self, From):

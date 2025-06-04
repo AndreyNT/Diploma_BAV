@@ -6,8 +6,7 @@ import os
 import tempfile
 from datetime import datetime, timedelta
 import time
-import csv
-import logging
+import matplotlib.pyplot as plt
 
 from Model.Configuration import Configuration
 from GeneticAlgorithm import GeneticAlgorithm
@@ -54,14 +53,16 @@ async def generate_schedule(request: ScheduleRequest):
 
     # Проверяем, запущено ли приложение в Docker
     is_docker = os.path.exists('/.dockerenv')
-    CONFIG_FOLDER = os.getenv('SCHEDULE_FOLDER', '/app/data' if is_docker else 'C:/Schedule_test/')
+    CONFIG_FOLDER = os.getenv('SCHEDULE_FOLDER',
+                              '/app/data' if is_docker else 'C:/Schedule_test/')
 
     # Формируем путь к файлу в корне диска C
     safe_file_name = os.path.basename(request.file_name)
     file_path = os.path.join(CONFIG_FOLDER, safe_file_name)
 
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail=f"Файл '{safe_file_name}' не найден")
+        raise HTTPException(status_code=404,
+                            detail=f"Файл '{safe_file_name}' не найден")
 
     try:
         # Очистка временных файлов перед выполнением
@@ -74,7 +75,12 @@ async def generate_schedule(request: ScheduleRequest):
         # Генетический алгоритм
         alg = GeneticAlgorithm(configuration)
         print("ГА Расписание 1.0.0. Начало формирования расписания.", alg, ".\n")
-        alg.run()
+        #####alg.run()
+        result = alg.run()
+
+        # Получаем данные для графика
+        fitness_history = result["fitness_history"]
+        currentGeneration = result["currentGeneration"]
 
         # Получаем расписание из alg.result (Schedule)
         schedule = alg.result
@@ -94,17 +100,31 @@ async def generate_schedule(request: ScheduleRequest):
         # Формирование JSON
         schedule_data = JsonOutput.write_json(schedule, json_path)
 
+        # Сохранение графика
+        base_name = os.path.splitext(safe_file_name)[0].rstrip("_data")
+        plot_path = os.path.join(CONFIG_FOLDER, f"{base_name}_fig1.png")
+
+        plt.plot(range(currentGeneration + 1), fitness_history)
+        plt.xlabel("Generations")
+        plt.ylabel("Fitness")
+        plt.title("Fitness vs Generations")
+        plt.grid(True)
+        plt.savefig(plot_path)
+        plt.close()
+
         return {
             "csv_path": convert_path(csv_path),
             "html_path": convert_path(html_path),
             "json_path": convert_path(json_path),
-            "schedule": schedule_data
+            "schedule": schedule_data,
+            "fig1": plot_path
         }
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка при генерации расписания: {str(e)}")
+        raise HTTPException(status_code=500,
+                            detail=f"Ошибка при генерации расписания: {str(e)}")
 
 
 @app.get("/test")
