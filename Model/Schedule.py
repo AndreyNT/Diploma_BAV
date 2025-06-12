@@ -84,8 +84,7 @@ class Schedule:
         new_chromosome.calculateFitness("makeNewFromPrototype")
         return new_chromosome
 
-    # Выполняет операцию кроссовера с использованием
-    # двух хромосом и возвращает потомка
+    # Выполняет операцию кроссовера с использованием двух хромосом и возвращает потомка
     def crossover(self, parent, numberOfCrossoverPoints, crossoverProbability):
         # Проверяет вероятность операции кроссовера
         if randrange(32768) % 100 > crossoverProbability:
